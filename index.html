@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ICT Trading Journal v3</title>
+<title>ICT Trading Journal v2</title>
 <style>
 :root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--green:#3fb950;--red:#f85149;--orange:#d29922;--blue:#58a6ff;--gold:#e3b341;--purple:#bc8cff;--accent:#238636;}
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -121,7 +121,7 @@ input:focus,select:focus{outline:none;border-color:var(--blue);}
   <div class="header-left">
     <div class="logo">📊</div>
     <div>
-      <div class="header-title">ICT Trading Journal <span style="font-size:11px;color:var(--text2);font-weight:400">v3.0</span></div>
+      <div class="header-title">ICT Trading Journal <span style="font-size:11px;color:var(--text2);font-weight:400">v3.1</span></div>
       <div class="header-sub">Smart Money · Demo Account · MetaQuotes</div>
     </div>
   </div>
@@ -460,9 +460,11 @@ function updateStats(){
 
   const bal=BALANCE_START+pnl;
   document.getElementById('statBalance').textContent=bal.toLocaleString('fr-FR',{minimumFractionDigits:2})+'EUR';
+  const totalRR = all.reduce((s,t)=>s+(t.rr||0),0);
+  const avgRR = total>0?(totalRR/total):0;
   document.getElementById('statPnl').textContent=(pnl>=0?'+':'')+pnl.toFixed(2).replace('.',',')+' EUR';
   document.getElementById('statPnl').className='stat-value '+(pnl>=0?'val-green':'val-red');
-  document.getElementById('statPnlPct').textContent=(pnl/BALANCE_START*100).toFixed(2)+'% depuis départ';
+  document.getElementById('statPnlPct').textContent=(pnl/BALANCE_START*100).toFixed(2)+'% | Total: '+(totalRR>=0?'+':'')+totalRR.toFixed(2)+'R | Moy: '+(avgRR>=0?'+':'')+avgRR.toFixed(2)+'R';
   document.getElementById('statWR').textContent=wr+'%';
   document.getElementById('statWRSub').textContent=`${wins}W / ${losses}L (${total} trades)`;
   document.getElementById('statSetup').textContent=best;
@@ -567,13 +569,9 @@ function saveTrade(){
     ticket:document.getElementById('fTicket').value,
     tradeType:document.getElementById('fType').value
   };
-  // Calcul RR automatique
-  const slp = parseFloat(document.getElementById('fSLpips').value)||0;
-  const lot = parseFloat(document.getElementById('fLot').value)||0;
-  const sym = document.getElementById('fSym').value;
-  const pipVal = sym.includes('XAU') ? 8.6 : 9.67;
-  const oneR = slp * lot * pipVal;
-  t.rr = oneR > 0 ? (t.pnl / oneR) : 0;
+  // Calcul RR : 1R = 1% du compte de départ = 1000 EUR
+  const oneR = BALANCE_START * 0.01;
+  t.rr = oneR > 0 ? parseFloat((t.pnl / oneR).toFixed(2)) : 0;
   if(editingId){
     const idx=trades.findIndex(x=>x.id===editingId);
     trades[idx]={...t,id:editingId};
@@ -671,13 +669,10 @@ function handleCSV(e){
         duree:parseInt(get('Duree_min'))||0,
         ticket
       });
-      // Calcul RR auto si absent
+      // Calcul RR : 1R = 1% du compte de départ
       const last=trades[trades.length-1];
-      if(!last.rr && last.slpips>0 && last.lot>0){
-        const pipVal=last.sym.includes('XAU')?8.6:9.67;
-        const oneR=last.slpips*last.lot*pipVal;
-        last.rr=oneR>0?last.pnl/oneR:0;
-      }
+      const oneR = BALANCE_START * 0.01;
+      last.rr = parseFloat((last.pnl / oneR).toFixed(2));
       added++;
     });
     saveLocal();
@@ -690,6 +685,11 @@ function handleCSV(e){
 
 // ---- INIT ----
 loadLocal();
+// Recalculer RR pour tous les trades existants avec la bonne formule
+trades.forEach(t => {
+  const oneR = BALANCE_START * 0.01;
+  t.rr = parseFloat((t.pnl / oneR).toFixed(2));
+});
 applyTZUI();
 render();
 </script>
