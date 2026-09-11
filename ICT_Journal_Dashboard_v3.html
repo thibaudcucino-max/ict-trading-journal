@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICT Trading Journal v2</title>
+<style>
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--green:#3fb950;--red:#f85149;--orange:#d29922;--blue:#58a6ff;--gold:#e3b341;--purple:#bc8cff;--accent:#238636;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',monospace;font-size:13px;min-height:100vh;}
+.header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo{background:var(--accent);border-radius:8px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.header-title{font-size:16px;font-weight:700;}
+.header-sub{font-size:11px;color:var(--text2);}
+.header-right{display:flex;align-items:center;gap:12px;}
+.live-badge{background:#1a3a1a;border:1px solid var(--green);color:var(--green);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.tz-toggle{display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:20px;padding:4px 12px;font-size:11px;cursor:pointer;user-select:none;}
+.tz-toggle:hover{border-color:var(--blue);}
+.tz-active{color:var(--blue);font-weight:700;}
+.header-time{font-size:11px;color:var(--text2);}
+.stats-bar{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--border);border-bottom:1px solid var(--border);}
+.stat-card{background:var(--bg2);padding:16px 20px;}
+.stat-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.stat-value{font-size:22px;font-weight:700;}
+.stat-sub{font-size:11px;color:var(--text2);margin-top:3px;}
+.val-green{color:var(--green)}.val-red{color:var(--red)}.val-gold{color:var(--gold)}.val-blue{color:var(--blue)}
+.controls{padding:14px 24px;display:flex;align-items:center;gap:10px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.filter-group{display:flex;gap:4px;}
+.btn{padding:6px 14px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-size:12px;transition:all .15s;}
+.btn:hover{border-color:var(--blue);color:var(--text);}
+.btn.active{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:600;}
+.btn-win.active{background:var(--green);border-color:var(--green);}
+.btn-loss.active{background:var(--red);border-color:var(--red);}
+.btn-open.active{background:var(--orange);border-color:var(--orange);}
+.search{flex:1;min-width:200px;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12px;}
+.search:focus{outline:none;border-color:var(--blue);}
+.actions{margin-left:auto;display:flex;gap:8px;}
+.btn-primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600;}
+.btn-primary:hover{background:#2ea043;}
+.table-wrap{padding:0 24px 24px;overflow-x:auto;}
+table{width:100%;border-collapse:collapse;margin-top:12px;}
+th{background:var(--bg2);padding:10px 12px;text-align:left;font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;border-bottom:2px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none;}
+th:hover{color:var(--text);}
+td{padding:10px 12px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap;}
+tr:hover td{background:rgba(255,255,255,.025);}
+.badge-sym{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:4px;font-weight:700;font-size:11px;}
+.badge-xau{background:rgba(227,179,65,.15);color:var(--gold);border:1px solid rgba(227,179,65,.3);}
+.badge-gbp{background:rgba(88,166,255,.1);color:var(--blue);border:1px solid rgba(88,166,255,.25);}
+.badge-eur{background:rgba(63,185,80,.1);color:var(--green);border:1px solid rgba(63,185,80,.25);}
+.badge-sell{color:var(--red);font-weight:700;font-size:12px;}
+.badge-buy{color:var(--green);font-weight:700;font-size:12px;}
+.badge-session{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;}
+.sess-london{background:rgba(188,140,255,.15);color:var(--purple);border:1px solid rgba(188,140,255,.3);}
+.sess-ny{background:rgba(88,166,255,.15);color:var(--blue);border:1px solid rgba(88,166,255,.3);}
+.sess-asian{background:rgba(227,179,65,.15);color:var(--gold);border:1px solid rgba(227,179,65,.3);}
+.badge-result{padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;}
+.res-win{background:rgba(63,185,80,.15);color:var(--green);border:1px solid rgba(63,185,80,.3);}
+.res-loss{background:rgba(248,81,73,.15);color:var(--red);border:1px solid rgba(248,81,73,.3);}
+.res-open{background:rgba(210,153,34,.15);color:var(--orange);border:1px solid rgba(210,153,34,.3);}
+.pnl-pos{color:var(--green);font-weight:700;}
+.pnl-neg{color:var(--red);font-weight:700;}
+.sl-pips{color:var(--orange);font-weight:600;}
+.ml-wrap{display:flex;align-items:center;gap:6px;}
+.ml-bar{width:50px;height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.ml-fill{height:100%;border-radius:3px;}
+.ml-val{font-size:11px;color:var(--text2);}
+.tp-dots{display:flex;gap:4px;align-items:center;}
+.tp-dot{width:10px;height:10px;border-radius:50%;}
+.tp-dot.hit{background:var(--green);box-shadow:0 0 4px rgba(63,185,80,.6);}
+.tp-dot.miss{background:var(--bg3);border:1px solid var(--border);}
+.tp-label{font-size:10px;color:var(--text2);margin-left:4px;}
+.cloture-badge{padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;}
+.cl-tp3{background:rgba(63,185,80,.15);color:var(--green);}
+.cl-trail{background:rgba(88,166,255,.15);color:var(--blue);}
+.cl-be{background:rgba(210,153,34,.15);color:var(--orange);}
+.cl-sl{background:rgba(248,81,73,.15);color:var(--red);}
+.cl-tp1{background:rgba(63,185,80,.1);color:var(--green);}
+.cl-tp2{background:rgba(63,185,80,.12);color:var(--green);}
+.act-btn{background:none;border:none;cursor:pointer;padding:3px 6px;border-radius:4px;transition:background .1s;}
+.act-btn:hover{background:var(--bg3);}
+.act-edit{color:var(--orange);font-size:14px;}
+.act-del{color:var(--red);font-size:14px;}
+.pagination{padding:12px 24px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border);color:var(--text2);font-size:12px;}
+.page-btns{display:flex;gap:4px;}
+.page-btn{width:28px;height:28px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);color:var(--text2);cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.page-btn.active{background:var(--blue);border-color:var(--blue);color:#fff;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:28px;width:540px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+.modal h2{font-size:16px;font-weight:700;margin-bottom:20px;}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;}
+input,select{padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;width:100%;}
+input:focus,select:focus{outline:none;border-color:var(--blue);}
+.tp-check-group{display:flex;gap:12px;align-items:center;margin-top:4px;}
+.tp-check-item{display:flex;align-items:center;gap:6px;cursor:pointer;padding:6px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);transition:all .15s;user-select:none;}
+.tp-check-item:hover{border-color:var(--green);}
+.tp-check-item input[type=checkbox]{display:none;}
+.tp-check-item.checked{border-color:var(--green);background:rgba(63,185,80,.1);}
+.tp-check-dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--text2);transition:all .15s;}
+.tp-check-item.checked .tp-check-dot{background:var(--green);border-color:var(--green);}
+.tp-check-text{font-size:12px;font-weight:600;color:var(--text2);}
+.tp-check-item.checked .tp-check-text{color:var(--green);}
+.modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:24px;}
+.btn-cancel{background:var(--bg3);border-color:var(--border);color:var(--text2);}
+.btn-save{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700;padding:8px 20px;}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px 20px;font-size:13px;z-index:200;opacity:0;transition:opacity .3s;pointer-events:none;}
+.toast.show{opacity:1;}
+.toast.ok{border-color:var(--green);color:var(--green);}
+.toast.err{border-color:var(--red);color:var(--red);}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">📊</div>
+    <div>
+      <div class="header-title">ICT Trading Journal <span style="font-size:11px;color:var(--text2);font-weight:400">v3.0</span></div>
+      <div class="header-sub">Smart Money · Demo Account · MetaQuotes</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="tz-toggle" onclick="toggleTZ()" title="Cliquer pour changer de timezone">
+      <span id="tzLabel" class="tz-active">UTC+2 Paris</span>
+      <span style="color:var(--text2)">|</span>
+      <span id="tzMT5" style="color:var(--text2)">MT5 UTC+3</span>
+    </div>
+    <div class="live-badge"><span class="live-dot"></span> LIVE</div>
+    <div class="header-time" id="clock"></div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-card">
+    <div class="stat-label">Balance</div>
+    <div class="stat-value" id="statBalance">100 000,00 EUR</div>
+    <div class="stat-sub">Compte démo</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">PnL Total</div>
+    <div class="stat-value val-green" id="statPnl">+0,00 EUR</div>
+    <div class="stat-sub" id="statPnlPct">0.00% depuis départ</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Win Rate</div>
+    <div class="stat-value val-gold" id="statWR">0%</div>
+    <div class="stat-sub" id="statWRSub">0W / 0L</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Meilleur Setup</div>
+    <div class="stat-value val-blue" id="statSetup" style="font-size:15px;padding-top:4px;">–</div>
+    <div class="stat-sub" id="statSetupSub">–</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Session London</div>
+    <div class="stat-value val-green" id="statLondon">0%</div>
+    <div class="stat-sub" id="statLondonSub">0W / 0L</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Session NY</div>
+    <div class="stat-value val-green" id="statNY">0%</div>
+    <div class="stat-sub" id="statNYSub">0W / 0L</div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="filter-group" id="symFilters">
+    <button class="btn active" onclick="filterSym('Tous',this)">Tous</button>
+    <button class="btn" onclick="filterSym('EURUSD',this)">EURUSD</button>
+    <button class="btn" onclick="filterSym('GBPUSD',this)">GBPUSD</button>
+    <button class="btn" onclick="filterSym('GOLD',this)">GOLD</button>
+  </div>
+  <div class="filter-group" id="resFilters">
+    <button class="btn active" onclick="filterRes('Tous',this)">Tous</button>
+    <button class="btn btn-win" onclick="filterRes('WIN',this)">WIN</button>
+    <button class="btn btn-loss" onclick="filterRes('LOSS',this)">LOSS</button>
+    <button class="btn btn-open" onclick="filterRes('OPEN',this)">OPEN</button>
+  </div>
+  <div class="filter-group" id="typeFilters">
+    <button class="btn active" onclick="filterType('Tous',this)">Tous</button>
+    <button class="btn" onclick="filterType('Reel',this)" style="color:var(--green)">🟢 Réel</button>
+    <button class="btn" onclick="filterType('Simule',this)" style="color:var(--blue)">🔵 Simulé</button>
+  </div>
+  <input class="search" type="text" placeholder="Rechercher setup, session, symbole..." oninput="filterSearch(this.value)">
+  <div class="actions">
+    <button class="btn" onclick="importCSV()">📥 Importer CSV</button>
+    <button class="btn btn-primary" onclick="openModal()">+ Ajouter trade</button>
+    <button class="btn" onclick="exportCSV()">📤 Exporter CSV</button>
+    <button class="btn" onclick="clearLocal()" style="color:var(--red);border-color:var(--red)" title="Effacer tous les trades">🗑 Reset</button>
+  </div>
+</div>
+
+<div class="table-wrap">
+  <table id="tradeTable">
+    <thead>
+      <tr>
+        <th onclick="sortTable('date')">DATE ↕</th>
+        <th>SYMBOLE</th>
+        <th>DIR</th>
+        <th onclick="sortTable('entry')">ENTRY ↕</th>
+        <th>SL</th>
+        <th onclick="sortTable('slpips')">SL PIPS ↕</th>
+        <th onclick="sortTable('lot')">LOT ↕</th>
+        <th>SESSION</th>
+        <th>SETUP</th>
+        <th>ML</th>
+        <th>TP</th>
+        <th>CLÔTURE</th>
+        <th onclick="sortTable('pnl')">PNL EUR ↕</th>
+        <th>RR</th><th>TYPE</th><th>RÉSULTAT</th>
+        <th onclick="sortTable('duree')">DURÉE ↕</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div class="pagination">
+  <span id="pageInfo">0 trades</span>
+  <div class="page-btns"><button class="page-btn active">1</button></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <h2 id="modalTitle">Ajouter un trade</h2>
+    <div class="form-grid">
+      <div class="form-group"><label>Date</label><input type="date" id="fDate"></div>
+      <div class="form-group"><label>Heure (Paris UTC+2)</label><input type="time" id="fHeure"></div>
+      <div class="form-group"><label>Symbole</label><select id="fSym"><option>EURUSD</option><option>GBPUSD</option><option>XAUUSD</option></select></div>
+      <div class="form-group"><label>Direction</label><select id="fDir"><option>BUY</option><option>SELL</option></select></div>
+      <div class="form-group"><label>Entry</label><input type="number" id="fEntry" step="0.00001"></div>
+      <div class="form-group"><label>SL</label><input type="number" id="fSL" step="0.00001"></div>
+      <div class="form-group"><label>SL Pips</label><input type="number" id="fSLpips" step="0.1"></div>
+      <div class="form-group"><label>Lot</label><input type="number" id="fLot" step="0.01"></div>
+      <div class="form-group"><label>TP1</label><input type="number" id="fTP1" step="0.00001"></div>
+      <div class="form-group"><label>TP2</label><input type="number" id="fTP2" step="0.00001"></div>
+      <div class="form-group"><label>TP3</label><input type="number" id="fTP3" step="0.00001"></div>
+      <div class="form-group"><label>Session</label><select id="fSession"><option>London</option><option>NY</option><option>Asian</option><option>LClose</option></select></div>
+      <div class="form-group"><label>ML Score</label><input type="number" id="fML" min="0" max="100"></div>
+      <div class="form-group"><label>Setup</label><input type="text" id="fSetup" placeholder="SSL_OB, BSL_FVG..."></div>
+      <div class="form-group full">
+        <label>TP Atteints</label>
+        <div class="tp-check-group">
+          <div class="tp-check-item" id="ck1" onclick="toggleTP(1)"><input type="checkbox" id="cbTP1"><div class="tp-check-dot"></div><span class="tp-check-text">TP1</span></div>
+          <div class="tp-check-item" id="ck2" onclick="toggleTP(2)"><input type="checkbox" id="cbTP2"><div class="tp-check-dot"></div><span class="tp-check-text">TP2</span></div>
+          <div class="tp-check-item" id="ck3" onclick="toggleTP(3)"><input type="checkbox" id="cbTP3"><div class="tp-check-dot"></div><span class="tp-check-text">TP3</span></div>
+        </div>
+      </div>
+      <div class="form-group"><label>Clôture</label><select id="fCloture"><option value="">–</option><option value="TP1">TP1</option><option value="TP2">TP2</option><option value="TP3">🏆 TP3</option><option value="Trail">📈 Trail</option><option value="BE">🔒 BE</option><option value="SL">🛑 SL</option></select></div>
+      <div class="form-group"><label>Type</label><select id="fType"><option value="Reel">🟢 Réel</option><option value="Simule">🔵 Simulé</option></select></div><div class="form-group"><label>Résultat</label><select id="fRes"><option>WIN</option><option>LOSS</option><option>OPEN</option></select></div>
+      <div class="form-group"><label>PNL EUR</label><input type="number" id="fPnl" step="0.01"></div>
+      <div class="form-group"><label>Durée (min)</label><input type="number" id="fDuree"></div>
+      <div class="form-group"><label>Ticket MT5</label><input type="text" id="fTicket" placeholder="optionnel"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-cancel" onclick="closeModal()">Annuler</button>
+      <button class="btn btn-save" onclick="saveTrade()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="csvInput" accept=".csv" style="display:none" onchange="handleCSV(event)">
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- STATE ----
+let trades = [];
+let nextId = 1;
+let editingId = null;
+let symFilter='Tous', resFilter='Tous', typeFilter='Tous', searchText='';
+let sortKey='date', sortAsc=false;
+let tzParis = true;
+const BALANCE_START = 100000;
+const LS_KEY = 'ict_journal_trades';
+const LS_ID  = 'ict_journal_nextid';
+const LS_TZ  = 'ict_journal_tz';
+
+// ---- PERSISTANCE localStorage ----
+function saveLocal(){
+  try{
+    localStorage.setItem(LS_KEY, JSON.stringify(trades));
+    localStorage.setItem(LS_ID,  String(nextId));
+    localStorage.setItem(LS_TZ,  String(tzParis));
+  } catch(e){ console.warn('localStorage save error',e); }
+}
+function loadLocal(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(raw){ trades = JSON.parse(raw); }
+    const id = localStorage.getItem(LS_ID);
+    if(id){ nextId = parseInt(id)||1; }
+    const tz = localStorage.getItem(LS_TZ);
+    if(tz !== null){ tzParis = tz === 'true'; }
+  } catch(e){ console.warn('localStorage load error',e); }
+}
+function clearLocal(){
+  if(!confirm('Effacer TOUS les trades du journal ? Cette action est irréversible.')) return;
+  localStorage.removeItem(LS_KEY);
+  localStorage.removeItem(LS_ID);
+  trades=[]; nextId=1;
+  showToast('Journal effacé','ok');
+  render();
+}
+
+// ---- TIMEZONE ----
+function toggleTZ() {
+  tzParis = !tzParis;
+  applyTZUI();
+  saveLocal();
+  render();
+}
+function applyTZUI(){
+  document.getElementById('tzLabel').className = tzParis ? 'tz-active' : '';
+  document.getElementById('tzMT5').className = !tzParis ? 'tz-active' : '';
+  document.getElementById('tzMT5').style.color = tzParis ? 'var(--text2)' : 'var(--blue)';
+}
+function applyTZ(heure) {
+  if(!tzParis || !heure) return heure;
+  // MT5 UTC+3 -> Paris UTC+2 : soustraire 1h
+  const [h,m] = heure.split(':').map(Number);
+  const newH = (h - 1 + 24) % 24;
+  return String(newH).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+}
+
+// ---- CLOCK ----
+function updateClock(){
+  const now = new Date();
+  document.getElementById('clock').textContent = 'Mis à jour ' + now.toLocaleTimeString('fr-FR');
+}
+setInterval(updateClock,1000); updateClock();
+
+// ---- TOAST ----
+function showToast(msg, type='ok'){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(()=>t.className='toast',3000);
+}
+
+// ---- HELPERS ----
+function symBadge(sym){
+  if(sym.includes('XAU')) return `<span class="badge-sym badge-xau">✦ GOLD</span>`;
+  if(sym.includes('GBP')) return `<span class="badge-sym badge-gbp">⇄ GBPUSD</span>`;
+  return `<span class="badge-sym badge-eur">⇄ EURUSD</span>`;
+}
+function sessClass(s){
+  if(s==='London') return 'sess-london';
+  if(s==='NY') return 'sess-ny';
+  return 'sess-asian';
+}
+function mlColor(ml){ return ml>=70?'#3fb950':ml>=50?'#d29922':'#f85149'; }
+function formatSLpips(t){
+  // XAU : SLpips stocké en points (1 pip = 10 points) → diviser par 10
+  if(t.sym && t.sym.includes('XAU') && t.slpips > 50){
+    return (t.slpips / 10).toFixed(1);
+  }
+  return t.slpips ? t.slpips.toFixed(1) : '0';
+}
+function tpDots(t){
+  const hits=[t.tp1hit,t.tp2hit,t.tp3hit];
+  const labels=['TP1','TP2','TP3'];
+  let dots=hits.map((h,i)=>`<div class="tp-dot ${h?'hit':'miss'}" title="${labels[i]}${h?' ✓':' ✗'}"></div>`).join('');
+  const count=hits.filter(Boolean).length;
+  const lbl = count===0?(t.res==='LOSS'?'–':'–'):count===1?'TP1':count===2?'TP1+2':'TP1+2+3';
+  return `<div class="tp-dots">${dots}<span class="tp-label">${lbl}</span></div>`;
+}
+function clotureBadge(c){
+  if(!c||c==='') return '<span style="color:var(--text2)">–</span>';
+  const map={
+    'TP3':'🏆 TP3','Trail':'📈 Trail','BE':'🔒 BE','SL':'🛑 SL',
+    'TP1':'🎯 TP1','TP2':'🎯🎯 TP2'
+  };
+  const cls={'TP3':'cl-tp3','Trail':'cl-trail','BE':'cl-be','SL':'cl-sl','TP1':'cl-tp1','TP2':'cl-tp2'};
+  return `<span class="cloture-badge ${cls[c]||''}">${map[c]||c}</span>`;
+}
+
+// ---- RENDER ----
+function getFiltered(){
+  let t=[...trades];
+  if(symFilter!=='Tous') t=t.filter(x=>x.sym.includes(symFilter==='GOLD'?'XAU':symFilter));
+  if(resFilter!=='Tous') t=t.filter(x=>x.res===resFilter);
+  if(typeFilter!=='Tous') t=t.filter(x=>(x.tradeType||'Reel')===typeFilter);
+  if(searchText) t=t.filter(x=>(x.setup+x.session+x.sym+x.ticket).toLowerCase().includes(searchText.toLowerCase()));
+  t.sort((a,b)=>{
+    let va=a[sortKey],vb=b[sortKey];
+    if(sortKey==='date'){va=a.date+(tzParis?applyTZ(a.heure):a.heure);vb=b.date+(tzParis?applyTZ(b.heure):b.heure);}
+    if(typeof va==='string') return sortAsc?va.localeCompare(vb):vb.localeCompare(va);
+    return sortAsc?va-vb:vb-va;
+  });
+  return t;
+}
+
+function render(){
+  const rows=getFiltered();
+  const tbody=document.getElementById('tbody');
+  if(!rows.length){
+    tbody.innerHTML=`<tr><td colspan="16" style="text-align:center;padding:40px;color:var(--text2)">Aucun trade — importez un CSV ou ajoutez un trade</td></tr>`;
+    document.getElementById('pageInfo').textContent='0 trades';
+    updateStats();
+    return;
+  }
+  tbody.innerHTML=rows.map(t=>{
+    const hAff = tzParis ? applyTZ(t.heure) : t.heure;
+    const pnlC=t.pnl>=0?'pnl-pos':'pnl-neg';
+    const pnlS=(t.pnl>=0?'+':'')+t.pnl.toFixed(2).replace('.',',')+' EUR';
+    const resC=t.res==='WIN'?'res-win':t.res==='LOSS'?'res-loss':'res-open';
+    const ml=t.ml;
+    return `<tr>
+      <td style="color:var(--text2);font-size:12px">${t.date}<br><span style="font-size:11px">${hAff}${tzParis?' 🕐':' 🕐 MT5'}</span></td>
+      <td>${symBadge(t.sym)}</td>
+      <td><span class="${t.dir==='SELL'?'badge-sell':'badge-buy'}">▼ ${t.dir}</span></td>
+      <td style="font-family:monospace;font-size:12px">${t.entry}</td>
+      <td style="font-family:monospace;color:var(--text2);font-size:12px">${t.sl}</td>
+      <td class="sl-pips">${formatSLpips(t)}p</td>
+      <td>${t.lot}</td>
+      <td><span class="badge-session ${sessClass(t.session)}">${t.session}</span></td>
+      <td style="color:var(--text2);font-size:12px;max-width:120px;overflow:hidden;text-overflow:ellipsis" title="${t.setup}">${t.setup.split('|')[0].trim()}</td>
+      <td><div class="ml-wrap"><div class="ml-bar"><div class="ml-fill" style="width:${Math.round(ml/2)}px;background:${mlColor(ml)}"></div></div><span class="ml-val">${ml}</span></div></td>
+      <td>${tpDots(t)}</td>
+      <td>${clotureBadge(t.cloture)}</td>
+      <td class="${pnlC}">${pnlS}</td>
+      <td style="color:var(--text2);font-size:12px">${t.rr ? (t.rr>=0?'+':'')+parseFloat(t.rr).toFixed(2)+'R' : '–'}</td>
+      <td><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:${t.tradeType==='Simule'?'rgba(88,166,255,0.15)':'rgba(63,185,80,0.1)'};color:${t.tradeType==='Simule'?'var(--blue)':'var(--green)'}">${t.tradeType==='Simule'?'🔵 Sim':'🟢 Réel'}</span></td>
+      <td><span class="badge-result ${resC}">${t.res}</span></td>
+      <td style="color:var(--text2)">${t.duree}min</td>
+      <td>
+        <button class="act-btn act-edit" onclick="editTrade(${t.id})" title="Modifier">✎</button>
+        <button class="act-btn act-del" onclick="deleteTrade(${t.id})" title="Supprimer">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+  document.getElementById('pageInfo').textContent=`1-${rows.length} sur ${rows.length} trades`;
+  updateStats();
+}
+
+// ---- STATS ----
+function updateStats(){
+  const all=trades;
+  const wins=all.filter(t=>t.res==='WIN').length;
+  const losses=all.filter(t=>t.res==='LOSS').length;
+  const total=wins+losses;
+  const wr=total>0?Math.round(wins/total*100):0;
+  const pnl=all.reduce((s,t)=>s+t.pnl,0);
+  const lonW=all.filter(t=>t.session==='London'&&t.res==='WIN').length;
+  const lonL=all.filter(t=>t.session==='London'&&t.res==='LOSS').length;
+  const nyW=all.filter(t=>t.session==='NY'&&t.res==='WIN').length;
+  const nyL=all.filter(t=>t.session==='NY'&&t.res==='LOSS').length;
+  // Best setup par winrate
+  const su={};
+  all.forEach(t=>{if(!su[t.setup])su[t.setup]={w:0,l:0};if(t.res==='WIN')su[t.setup].w++;else if(t.res==='LOSS')su[t.setup].l++;});
+  let best='–',bestR=0;
+  Object.entries(su).forEach(([s,v])=>{const r=v.w/(v.w+v.l||1);if(r>bestR){bestR=r;best=s.split('|')[0].trim();}});
+
+  const bal=BALANCE_START+pnl;
+  document.getElementById('statBalance').textContent=bal.toLocaleString('fr-FR',{minimumFractionDigits:2})+'EUR';
+  document.getElementById('statPnl').textContent=(pnl>=0?'+':'')+pnl.toFixed(2).replace('.',',')+' EUR';
+  document.getElementById('statPnl').className='stat-value '+(pnl>=0?'val-green':'val-red');
+  document.getElementById('statPnlPct').textContent=(pnl/BALANCE_START*100).toFixed(2)+'% depuis départ';
+  document.getElementById('statWR').textContent=wr+'%';
+  document.getElementById('statWRSub').textContent=`${wins}W / ${losses}L (${total} trades)`;
+  document.getElementById('statSetup').textContent=best;
+  document.getElementById('statSetupSub').textContent=Math.round(bestR*100)+'% win rate';
+  document.getElementById('statLondon').textContent=(lonW+lonL>0?Math.round(lonW/(lonW+lonL)*100):0)+'%';
+  document.getElementById('statLondonSub').textContent=`${lonW}W / ${lonL}L`;
+  document.getElementById('statNY').textContent=(nyW+nyL>0?Math.round(nyW/(nyW+nyL)*100):0)+'%';
+  document.getElementById('statNYSub').textContent=`${nyW}W / ${nyL}L`;
+}
+
+// ---- FILTERS ----
+function filterSym(v,btn){symFilter=v;document.querySelectorAll('#symFilters .btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function filterRes(v,btn){resFilter=v;document.querySelectorAll('#resFilters .btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function filterSearch(v){searchText=v;render();}
+function filterType(v,btn){typeFilter=v;document.querySelectorAll('#typeFilters .btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');render();}
+function sortTable(k){if(sortKey===k)sortAsc=!sortAsc;else{sortKey=k;sortAsc=false;}render();}
+
+// ---- MODAL ----
+function openModal(pre){
+  editingId=null;
+  document.getElementById('modalTitle').textContent='Ajouter un trade';
+  const today=new Date().toISOString().split('T')[0];
+  const now=new Date().toTimeString().slice(0,5);
+  document.getElementById('fDate').value=pre?.date||today;
+  document.getElementById('fHeure').value=pre?.heure||now;
+  document.getElementById('fSym').value=pre?.sym||'EURUSD';
+  document.getElementById('fDir').value=pre?.dir||'SELL';
+  document.getElementById('fEntry').value=pre?.entry||'';
+  document.getElementById('fSL').value=pre?.sl||'';
+  document.getElementById('fSLpips').value=pre?.slpips||'';
+  document.getElementById('fLot').value=pre?.lot||'';
+  document.getElementById('fTP1').value=pre?.tp1||'';
+  document.getElementById('fTP2').value=pre?.tp2||'';
+  document.getElementById('fTP3').value=pre?.tp3||'';
+  document.getElementById('fSession').value=pre?.session||'London';
+  document.getElementById('fML').value=pre?.ml||'';
+  document.getElementById('fSetup').value=pre?.setup||'';
+  document.getElementById('fCloture').value=pre?.cloture||'';
+  document.getElementById('fRes').value=pre?.res||'WIN';
+  document.getElementById('fPnl').value=pre?.pnl||'';
+  document.getElementById('fDuree').value=pre?.duree||'';
+  document.getElementById('fTicket').value=pre?.ticket||'';
+  document.getElementById('fType').value=pre?.tradeType||'Reel';
+  setCheckbox(1,pre?.tp1hit||false);
+  setCheckbox(2,pre?.tp2hit||false);
+  setCheckbox(3,pre?.tp3hit||false);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function editTrade(id){
+  const t=trades.find(x=>x.id===id);if(!t)return;
+  editingId=id;
+  document.getElementById('modalTitle').textContent='Modifier le trade';
+  document.getElementById('fDate').value=t.date;
+  document.getElementById('fHeure').value=t.heure;
+  document.getElementById('fSym').value=t.sym;
+  document.getElementById('fDir').value=t.dir;
+  document.getElementById('fEntry').value=t.entry;
+  document.getElementById('fSL').value=t.sl;
+  document.getElementById('fSLpips').value=t.slpips;
+  document.getElementById('fLot').value=t.lot;
+  document.getElementById('fTP1').value=t.tp1||'';
+  document.getElementById('fTP2').value=t.tp2||'';
+  document.getElementById('fTP3').value=t.tp3||'';
+  document.getElementById('fSession').value=t.session;
+  document.getElementById('fML').value=t.ml;
+  document.getElementById('fSetup').value=t.setup;
+  document.getElementById('fCloture').value=t.cloture||'';
+  document.getElementById('fRes').value=t.res;
+  document.getElementById('fPnl').value=t.pnl;
+  document.getElementById('fDuree').value=t.duree;
+  document.getElementById('fTicket').value=t.ticket||'';
+  setCheckbox(1,t.tp1hit);setCheckbox(2,t.tp2hit);setCheckbox(3,t.tp3hit);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+function closeModal(){document.getElementById('modalOverlay').classList.remove('open');}
+function closeModalOutside(e){if(e.target===document.getElementById('modalOverlay'))closeModal();}
+function setCheckbox(n,v){const el=document.getElementById('ck'+n);const cb=document.getElementById('cbTP'+n);cb.checked=v;el.classList.toggle('checked',v);}
+function toggleTP(n){const cb=document.getElementById('cbTP'+n);cb.checked=!cb.checked;document.getElementById('ck'+n).classList.toggle('checked',cb.checked);}
+function saveTrade(){
+  const t={
+    date:document.getElementById('fDate').value,
+    heure:document.getElementById('fHeure').value,
+    sym:document.getElementById('fSym').value,
+    dir:document.getElementById('fDir').value,
+    entry:parseFloat(document.getElementById('fEntry').value)||0,
+    sl:parseFloat(document.getElementById('fSL').value)||0,
+    slpips:parseFloat(document.getElementById('fSLpips').value)||0,
+    lot:parseFloat(document.getElementById('fLot').value)||0,
+    tp1:parseFloat(document.getElementById('fTP1').value)||null,
+    tp2:parseFloat(document.getElementById('fTP2').value)||null,
+    tp3:parseFloat(document.getElementById('fTP3').value)||null,
+    session:document.getElementById('fSession').value,
+    ml:parseInt(document.getElementById('fML').value)||0,
+    setup:document.getElementById('fSetup').value,
+    tp1hit:document.getElementById('cbTP1').checked,
+    tp2hit:document.getElementById('cbTP2').checked,
+    tp3hit:document.getElementById('cbTP3').checked,
+    cloture:document.getElementById('fCloture').value,
+    pnl:parseFloat(document.getElementById('fPnl').value)||0,
+    res:document.getElementById('fRes').value,
+    duree:parseInt(document.getElementById('fDuree').value)||0,
+    ticket:document.getElementById('fTicket').value,
+    tradeType:document.getElementById('fType').value
+  };
+  // Calcul RR automatique
+  const slp = parseFloat(document.getElementById('fSLpips').value)||0;
+  const lot = parseFloat(document.getElementById('fLot').value)||0;
+  const sym = document.getElementById('fSym').value;
+  const pipVal = sym.includes('XAU') ? 8.6 : 9.67;
+  const oneR = slp * lot * pipVal;
+  t.rr = oneR > 0 ? (t.pnl / oneR) : 0;
+  if(editingId){
+    const idx=trades.findIndex(x=>x.id===editingId);
+    trades[idx]={...t,id:editingId};
+    showToast('Trade modifié ✓','ok');
+  } else {
+    t.id=nextId++;trades.push(t);
+    showToast('Trade ajouté ✓','ok');
+  }
+  saveLocal();
+  closeModal();render();
+}
+function deleteTrade(id){
+  if(!confirm('Supprimer ce trade ?')) return;
+  trades=trades.filter(x=>x.id!==id);
+  saveLocal();
+  showToast('Trade supprimé ✓','ok');render();
+}
+
+// ---- EXPORT CSV ----
+function exportCSV(){
+  const h=['Date','Heure','Symbole','Dir','Entry','SL','SLpips','TP1','TP2','TP3','Lot','Session','ML','Setup','TP1_hit','TP2_hit','TP3_hit','ClotureType','PnL_EUR','Resultat','Duree_min','Ticket'];
+  const rows=trades.map(t=>[
+    t.date,t.heure,t.sym,t.dir,t.entry,t.sl,t.slpips,
+    t.tp1||'',t.tp2||'',t.tp3||'',t.lot,t.session,t.ml,t.setup,
+    t.tp1hit?1:0,t.tp2hit?1:0,t.tp3hit?1:0,
+    t.cloture||'',t.pnl,t.res,t.duree,t.ticket||''
+  ]);
+  const csv=[h,...rows].map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='ICT_Journal_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  showToast('CSV exporté','ok');
+}
+
+// ---- IMPORT CSV (nouveau format v6.5) ----
+function importCSV(){document.getElementById('csvInput').click();}
+function handleCSV(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const lines=ev.target.result.split('\n').filter(l=>l.trim()&&!l.startsWith(','));
+    const headers=lines[0].split(',').map(h=>h.trim());
+    let added=0,dupes=0;
+    lines.slice(1).forEach(line=>{
+      if(!line.trim()) return;
+      const v=line.split(',');
+      const get=(k,def='')=>{const i=headers.indexOf(k);return i>=0?(v[i]||'').trim():def;};
+
+      const ticket=get('Ticket');
+      // Anti-doublon par ticket
+      if(ticket && trades.find(t=>t.ticket===ticket)){dupes++;return;}
+
+      // Heure : si importée depuis MT5 (UTC+3), on stocke telle quelle
+      // La correction s'applique à l'affichage selon le toggle TZ
+      const heure=get('Heure');
+
+      // Setup : prendre seulement la première partie avant |
+      const setupRaw=get('Setup');
+      const setup=setupRaw.split('|')[0].trim();
+
+      // TP hits : compatibilité ancien format (vide = false) et nouveau (0/1)
+      const tp1h=get('TP1_hit')==='1';
+      const tp2h=get('TP2_hit')==='1';
+      const tp3h=get('TP3_hit')==='1';
+
+      // ClotureType : déduire si absent
+      let cloture=get('ClotureType')||get('Resultat_type')||'';
+      if(!cloture){
+        const res=get('Resultat');
+        if(res==='LOSS') cloture='SL';
+        else if(tp3h) cloture='TP3';
+        else if(tp2h) cloture='Trail';
+        else if(tp1h) cloture='TP1';
+      }
+
+      trades.push({
+        id:nextId++,
+        date:get('Date'),heure,
+        sym:get('Symbole'),dir:get('Dir'),
+        entry:parseFloat(get('Entry'))||0,
+        sl:parseFloat(get('SL'))||0,
+        slpips:parseFloat(get('SLpips')||get('SL_pips'))||0,
+        lot:parseFloat(get('Lot'))||0,
+        tp1:parseFloat(get('TP1'))||null,
+        tp2:parseFloat(get('TP2'))||null,
+        tp3:parseFloat(get('TP3'))||null,
+        session:get('Session'),ml:parseInt(get('ML'))||0,
+        setup,tp1hit:tp1h,tp2hit:tp2h,tp3hit:tp3h,
+        cloture,
+        pnl:parseFloat(get('PnL_EUR')||get('PnL_total')||get('PNL_EUR'))||0,
+        rr:parseFloat(get('RR_final'))||0,
+        res:get('Resultat')||'OPEN',
+        tradeType:get('Type')||'Reel',
+        duree:parseInt(get('Duree_min'))||0,
+        ticket
+      });
+      // Calcul RR auto si absent
+      const last=trades[trades.length-1];
+      if(!last.rr && last.slpips>0 && last.lot>0){
+        const pipVal=last.sym.includes('XAU')?8.6:9.67;
+        const oneR=last.slpips*last.lot*pipVal;
+        last.rr=oneR>0?last.pnl/oneR:0;
+      }
+      added++;
+    });
+    saveLocal();
+    render();
+    showToast(`${added} trade(s) importé(s)${dupes>0?' · '+dupes+' doublon(s) ignoré(s)':''}`, added>0?'ok':'err');
+    e.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+// ---- INIT ----
+loadLocal();
+applyTZUI();
+render();
+</script>
+</body>
+</html>
